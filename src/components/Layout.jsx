@@ -41,30 +41,109 @@ function Layout({ children }) {
   return (
     <div style={styles.container}>
       <div style={styles.leftSidebar}>
-        <div style={styles.logo} onClick={() => handleNavItemClick('/home')}>DevLoop</div>
+        <div 
+          style={styles.logo} 
+          onClick={() => handleNavItemClick('/home')}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >DevLoop</div>
         <nav style={styles.nav}>
-          <div style={styles.navItem} onClick={() => handleNavItemClick('/home')}>
+          <div 
+            style={styles.navItem} 
+            onClick={() => handleNavItemClick('/home')}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(29, 155, 240, 0.1)'
+              e.currentTarget.style.borderColor = 'rgba(29, 155, 240, 0.3)'
+              e.currentTarget.querySelector('[style*="navIcon"]').style.transform = 'scale(1.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.borderColor = 'transparent'
+              e.currentTarget.querySelector('[style*="navIcon"]').style.transform = 'scale(1)'
+            }}
+          >
             <span style={styles.navIcon}>🏡</span>
             <span style={styles.navText}>Home</span>
           </div>
-          <div style={styles.navItem}>
+          <div 
+            style={styles.navItem}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(29, 155, 240, 0.1)'
+              e.currentTarget.style.borderColor = 'rgba(29, 155, 240, 0.3)'
+              e.currentTarget.querySelector('[style*="navIcon"]').style.transform = 'scale(1.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.borderColor = 'transparent'
+              e.currentTarget.querySelector('[style*="navIcon"]').style.transform = 'scale(1)'
+            }}
+          >
             <span style={styles.navIcon}>🌎</span>
             <span style={styles.navText}>Explore</span>
           </div>
-          <div style={styles.navItem}>
+          <div 
+            style={styles.navItem}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(29, 155, 240, 0.1)'
+              e.currentTarget.style.borderColor = 'rgba(29, 155, 240, 0.3)'
+              e.currentTarget.querySelector('[style*="navIcon"]').style.transform = 'scale(1.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.borderColor = 'transparent'
+              e.currentTarget.querySelector('[style*="navIcon"]').style.transform = 'scale(1)'
+            }}
+          >
             <span style={styles.navIcon}>🔔</span>
             <span style={styles.navText}>Notifications</span>
           </div>
-          <div style={styles.navItem}>
+          <div 
+            style={styles.navItem}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(29, 155, 240, 0.1)'
+              e.currentTarget.style.borderColor = 'rgba(29, 155, 240, 0.3)'
+              e.currentTarget.querySelector('[style*="navIcon"]').style.transform = 'scale(1.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.borderColor = 'transparent'
+              e.currentTarget.querySelector('[style*="navIcon"]').style.transform = 'scale(1)'
+            }}
+          >
             <span style={styles.navIcon}>💬</span>
             <span style={styles.navText}>Messages</span>
           </div>
-          <div style={styles.navItem}>
+          <div 
+            style={styles.navItem}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(29, 155, 240, 0.1)'
+              e.currentTarget.style.borderColor = 'rgba(29, 155, 240, 0.3)'
+              e.currentTarget.querySelector('[style*="navIcon"]').style.transform = 'scale(1.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.borderColor = 'transparent'
+              e.currentTarget.querySelector('[style*="navIcon"]').style.transform = 'scale(1)'
+            }}
+          >
             <span style={styles.navIcon}>🔖</span>
             <span style={styles.navText}>Bookmarks</span>
           </div>
         </nav>
-        <div style={styles.profileSection} onClick={handleProfileClick}>
+        <div 
+          style={styles.profileSection} 
+          onClick={handleProfileClick}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)'
+            e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.5)'
+            e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.2)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.borderColor = '#333'
+            e.currentTarget.style.boxShadow = 'none'
+          }}
+        >
           <div style={styles.profileAvatar}>
             {user.avatar ? (
               <img src={user.avatar} alt="Profile" style={styles.avatarImage} />
@@ -98,6 +177,16 @@ function Layout({ children }) {
                 key={index} 
                 style={styles.trendingItem}
                 onClick={() => handleTrendingClick(item.tag)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(29, 155, 240, 0.08)'
+                  e.currentTarget.style.borderColor = 'rgba(29, 155, 240, 0.2)'
+                  e.currentTarget.style.transform = 'translateX(4px)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.borderColor = 'transparent'
+                  e.currentTarget.style.transform = 'translateX(0)'
+                }}
               >
                 <div style={styles.trendingTag}>#{item.tag}</div>
                 <div style={styles.trendingPosts}>{item.count} posts</div>
@@ -116,7 +205,8 @@ const styles = {
     minHeight: '100vh',
     maxWidth: '1400px',
     margin: '0 auto',
-    backgroundColor: '#000000'
+    backgroundColor: '#000000',
+    animation: 'fadeIn 0.5s ease-out'
   },
   leftSidebar: {
     width: '260px',
@@ -131,12 +221,17 @@ const styles = {
     backgroundColor: '#000000'
   },
   logo: {
-    fontSize: '24px',
+    fontSize: '28px',
     fontWeight: '800',
     color: '#ffffff',
-    marginBottom: '20px',
+    marginBottom: '24px',
     cursor: 'pointer',
-    letterSpacing: '-0.3px'
+    letterSpacing: '-0.5px',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    transition: 'transform 0.3s ease'
   },
   nav: {
     display: 'flex',
@@ -147,40 +242,47 @@ const styles = {
   navItem: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
-    padding: '10px 14px',
-    borderRadius: '12px',
+    gap: '14px',
+    padding: '12px 16px',
+    borderRadius: '16px',
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    border: '1px solid transparent'
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    border: '1px solid transparent',
+    position: 'relative',
+    overflow: 'hidden'
   },
   navIcon: {
-    fontSize: '22px',
-    color: '#ffffff'
+    fontSize: '24px',
+    color: '#ffffff',
+    transition: 'transform 0.3s ease'
   },
   navText: {
-    fontSize: '16px',
+    fontSize: '17px',
     color: '#ffffff',
-    fontWeight: '600'
+    fontWeight: '600',
+    letterSpacing: '-0.2px'
   },
   profileSection: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
-    padding: '10px',
-    borderRadius: '12px',
+    gap: '12px',
+    padding: '12px',
+    borderRadius: '16px',
     cursor: 'pointer',
     marginTop: 'auto',
-    transition: 'all 0.2s ease',
-    border: '1px solid #333'
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    border: '1px solid #333',
+    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)'
   },
   profileAvatar: {
-    width: '48px',
-    height: '48px',
+    width: '52px',
+    height: '52px',
     borderRadius: '50%',
     overflow: 'hidden',
     backgroundColor: '#1a1a1a',
-    border: '2px solid #333'
+    border: '2px solid #333',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
   },
   avatarImage: {
     width: '100%',
@@ -226,36 +328,47 @@ const styles = {
     gap: '16px'
   },
   trendingContainer: {
-    backgroundColor: '#0d0d0d',
-    borderRadius: '12px',
-    padding: '16px',
-    border: '2px solid #444'
+    backgroundColor: 'rgba(13, 13, 13, 0.8)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: '16px',
+    padding: '20px',
+    border: '1px solid #333',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+    animation: 'slideIn 0.5s ease-out'
   },
   trendingTitle: {
-    fontSize: '18px',
+    fontSize: '20px',
     fontWeight: '800',
     color: '#ffffff',
-    marginBottom: '16px',
-    letterSpacing: '-0.2px'
+    marginBottom: '20px',
+    letterSpacing: '-0.3px',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text'
   },
   trendingItem: {
-    padding: '12px 0',
-    borderBottom: '1px solid #333',
+    padding: '14px 12px',
+    borderBottom: '1px solid #222',
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    border: '1px solid transparent'
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    border: '1px solid transparent',
+    borderRadius: '12px',
+    position: 'relative'
   },
   trendingTag: {
-    fontSize: '15px',
+    fontSize: '16px',
     fontWeight: '700',
     color: '#ffffff',
-    marginBottom: '3px',
-    letterSpacing: '-0.1px'
+    marginBottom: '4px',
+    letterSpacing: '-0.2px',
+    transition: 'color 0.2s ease'
   },
   trendingPosts: {
-    fontSize: '13px',
+    fontSize: '14px',
     color: '#888',
-    fontWeight: '500'
+    fontWeight: '500',
+    transition: 'color 0.2s ease'
   },
   noTrending: {
     padding: '20px',

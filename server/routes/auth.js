@@ -1,6 +1,7 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import User from '../models/User.js'
+import Post from '../models/Post.js'
 
 const router = express.Router()
 
@@ -140,7 +141,7 @@ router.put('/profile', async (req, res) => {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET)
-    const { bio, pronouns, website, github, linkedin, skills, avatar } = req.body
+    const { bio, pronouns, website, github, linkedin, twitter, skills, location, avatar, banner } = req.body
 
     const user = await User.findByIdAndUpdate(
       decoded.userId,
@@ -150,14 +151,25 @@ router.put('/profile', async (req, res) => {
         website: website || '',
         github: github || '',
         linkedin: linkedin || '',
+        twitter: twitter || '',
         skills: skills || [],
-        avatar: avatar || ''
+        location: location || '',
+        avatar: avatar || '',
+        banner: banner || ''
       },
       { new: true }
     ).select('-password')
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' })
+    }
+
+    // Update avatar in all posts by this user
+    if (avatar !== undefined) {
+      await Post.updateMany(
+        { author: decoded.userId },
+        { authorAvatar: avatar || '' }
+      )
     }
 
     res.json({

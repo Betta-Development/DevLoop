@@ -85,6 +85,8 @@ function Profile() {
 
   const handleSaveProfile = (updatedUser) => {
     setUser(updatedUser)
+    localStorage.setItem('user', JSON.stringify(updatedUser))
+    fetchUserPosts()
   }
 
   const handleBackClick = () => {
@@ -117,7 +119,22 @@ function Profile() {
           <div style={styles.profileDetails}>
             <div style={styles.profileHeader}>
               <h1 style={styles.username}>{user.username}</h1>
-              {isOwnProfile && <button onClick={handleEditProfile} style={styles.editButton}>Edit Profile</button>}
+              {isOwnProfile && (
+                <button 
+                  onClick={handleEditProfile} 
+                  style={styles.editButton}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(29, 155, 240, 0.1)'
+                    e.currentTarget.style.borderColor = 'rgba(29, 155, 240, 0.5)'
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent'
+                    e.currentTarget.style.borderColor = '#333'
+                    e.currentTarget.style.transform = 'translateY(0)'
+                  }}
+                >Edit Profile</button>
+              )}
             </div>
             <div style={styles.userHandle}>@{user.username.toLowerCase()}</div>
             {user.pronouns && <div style={styles.pronouns}>{user.pronouns}</div>}
@@ -176,8 +193,27 @@ function Profile() {
           </div>
         ) : (
           posts.map((post) => (
-            <div key={post._id} style={styles.post}>
-              <div style={styles.postAvatar}>
+            <div 
+              key={post._id} 
+              style={styles.post}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(29, 155, 240, 0.03)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent'
+              }}
+            >
+              <div 
+                style={styles.postAvatar}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)'
+                  e.currentTarget.style.borderColor = 'rgba(29, 155, 240, 0.5)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)'
+                  e.currentTarget.style.borderColor = '#333'
+                }}
+              >
                 {post.authorAvatar ? (
                   <img src={post.authorAvatar} alt="Profile" style={styles.avatarImage} />
                 ) : (
@@ -186,16 +222,60 @@ function Profile() {
               </div>
               <div style={styles.postContent}>
                 <div style={styles.postHeader}>
-                  <span style={styles.postAuthor}>{post.authorName}</span>
-                  <span style={styles.postHandle}>@{post.authorHandle}</span>
+                  <span 
+                    style={styles.postAuthor}
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#1d9bf0'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = '#ffffff'}
+                  >{post.authorName}</span>
+                  <span style={styles.postHandle}>{post.authorHandle}</span>
                   <span style={styles.postTime}>{post.timeAgo}</span>
                 </div>
                 <p style={styles.postText}>{post.content}</p>
                 <div style={styles.postActions}>
-                  <span style={styles.postAction}>💬 {post.comments || 0}</span>
-                  <span style={styles.postAction}>🔄 {post.retweets || 0}</span>
-                  <span style={styles.postAction}>❤️ {post.likes || 0}</span>
-                  <span style={styles.postAction}>🔗</span>
+                  <span 
+                    style={styles.postAction}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = '#1d9bf0'
+                      e.currentTarget.style.background = 'rgba(29, 155, 240, 0.1)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = '#888'
+                      e.currentTarget.style.background = 'transparent'
+                    }}
+                  >💬 {post.comments || 0}</span>
+                  <span 
+                    style={styles.postAction}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = '#00ba7c'
+                      e.currentTarget.style.background = 'rgba(0, 186, 124, 0.1)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = '#888'
+                      e.currentTarget.style.background = 'transparent'
+                    }}
+                  >🔄 {post.retweets || 0}</span>
+                  <span 
+                    style={styles.postAction}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = '#f91880'
+                      e.currentTarget.style.background = 'rgba(249, 24, 128, 0.1)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = '#888'
+                      e.currentTarget.style.background = 'transparent'
+                    }}
+                  >❤️ {post.likes || 0}</span>
+                  <span 
+                    style={styles.postAction}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = '#1d9bf0'
+                      e.currentTarget.style.background = 'rgba(29, 155, 240, 0.1)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = '#888'
+                      e.currentTarget.style.background = 'transparent'
+                    }}
+                  >�</span>
                 </div>
               </div>
             </div>
@@ -221,7 +301,8 @@ const styles = {
     borderBottom: '1px solid #333',
     position: 'sticky',
     top: 0,
-    backgroundColor: '#000000',
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    backdropFilter: 'blur(10px)',
     zIndex: 10
   },
   backButton: {
@@ -234,18 +315,20 @@ const styles = {
     marginRight: '16px'
   },
   headerTitle: {
-    fontSize: '20px',
-    fontWeight: 'bold',
-    color: '#ffffff'
+    fontSize: '22px',
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: '-0.3px'
   },
   profileSection: {
     borderBottom: '1px solid #333'
   },
   coverPhoto: {
-    height: '150px',
+    height: '180px',
     backgroundColor: '#1a1a1a',
     backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    animation: 'fadeIn 0.6s ease-out'
   },
   bannerImage: {
     width: '100%',
@@ -260,24 +343,28 @@ const styles = {
     marginBottom: '12px'
   },
   avatarImage: {
-    width: '120px',
-    height: '120px',
+    width: '130px',
+    height: '130px',
     borderRadius: '50%',
     objectFit: 'cover',
-    border: '4px solid #000000'
+    border: '4px solid #000000',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+    transition: 'all 0.3s ease'
   },
   avatarPlaceholder: {
-    width: '120px',
-    height: '120px',
+    width: '130px',
+    height: '130px',
     borderRadius: '50%',
     backgroundColor: '#333',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '48px',
+    fontSize: '52px',
     fontWeight: '800',
     color: '#ffffff',
-    border: '4px solid #000000'
+    border: '4px solid #000000',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+    transition: 'all 0.3s ease'
   },
   profileDetails: {
     marginTop: '8px'
@@ -295,15 +382,15 @@ const styles = {
     margin: 0
   },
   editButton: {
-    padding: '8px 16px',
+    padding: '10px 20px',
     backgroundColor: 'transparent',
     border: '1px solid #333',
-    borderRadius: '20px',
+    borderRadius: '24px',
     color: '#ffffff',
     fontSize: '14px',
-    fontWeight: 'bold',
+    fontWeight: '700',
     cursor: 'pointer',
-    transition: 'all 0.2s ease'
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
   },
   userHandle: {
     fontSize: '16px',
@@ -386,15 +473,20 @@ const styles = {
     padding: '16px 0',
     borderBottom: '1px solid #333',
     display: 'flex',
-    gap: '12px'
+    gap: '12px',
+    transition: 'all 0.3s ease',
+    animation: 'fadeIn 0.4s ease-out'
   },
   postAvatar: {
-    width: '48px',
-    height: '48px',
+    width: '52px',
+    height: '52px',
     borderRadius: '50%',
     overflow: 'hidden',
-    backgroundColor: '#333',
-    flexShrink: 0
+    backgroundColor: '#1a1a1a',
+    flexShrink: 0,
+    border: '2px solid #333',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
   },
   postContent: {
     flex: 1
@@ -406,8 +498,9 @@ const styles = {
   },
   postAuthor: {
     fontSize: '16px',
-    fontWeight: 'bold',
-    color: '#ffffff'
+    fontWeight: '700',
+    color: '#ffffff',
+    transition: 'color 0.2s ease'
   },
   postHandle: {
     fontSize: '14px',
@@ -430,7 +523,10 @@ const styles = {
   postAction: {
     fontSize: '14px',
     color: '#888',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    padding: '4px 8px',
+    borderRadius: '8px'
   },
   noPosts: {
     padding: '60px 20px',

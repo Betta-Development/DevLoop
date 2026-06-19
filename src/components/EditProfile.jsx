@@ -8,15 +8,12 @@ function EditProfile({ isOpen, onClose, user, onSave }) {
     github: '',
     linkedin: '',
     twitter: '',
-    skills: '',
     location: '',
     avatar: '',
     banner: ''
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [skillTags, setSkillTags] = useState([])
-  const [currentSkill, setCurrentSkill] = useState('')
   const avatarInputRef = useRef(null)
   const bannerInputRef = useRef(null)
   const [avatarHover, setAvatarHover] = useState(false)
@@ -24,7 +21,6 @@ function EditProfile({ isOpen, onClose, user, onSave }) {
 
   useEffect(() => {
     if (user) {
-      const skillsArray = user.skills || []
       setFormData({
         bio: user.bio || '',
         pronouns: user.pronouns || '',
@@ -32,12 +28,10 @@ function EditProfile({ isOpen, onClose, user, onSave }) {
         github: user.github || '',
         linkedin: user.linkedin || '',
         twitter: user.twitter || '',
-        skills: '',
         location: user.location || '',
         avatar: user.avatar || '',
         banner: user.banner || ''
       })
-      setSkillTags(skillsArray)
     }
   }, [user])
 
@@ -76,24 +70,6 @@ function EditProfile({ isOpen, onClose, user, onSave }) {
     }
   }
 
-  const handleAddSkill = () => {
-    if (currentSkill.trim() && !skillTags.includes(currentSkill.trim())) {
-      setSkillTags([...skillTags, currentSkill.trim()])
-      setCurrentSkill('')
-    }
-  }
-
-  const handleRemoveSkill = (skillToRemove) => {
-    setSkillTags(skillTags.filter(skill => skill !== skillToRemove))
-  }
-
-  const handleSkillKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      handleAddSkill()
-    }
-  }
-
   const handleAvatarClick = () => {
     avatarInputRef.current?.click()
   }
@@ -123,7 +99,6 @@ function EditProfile({ isOpen, onClose, user, onSave }) {
           github: formData.github,
           linkedin: formData.linkedin,
           twitter: formData.twitter,
-          skills: skillTags,
           location: formData.location,
           avatar: formData.avatar,
           banner: formData.banner
@@ -153,7 +128,18 @@ function EditProfile({ isOpen, onClose, user, onSave }) {
       <div style={styles.modal}>
         <div style={styles.header}>
           <h2 style={styles.title}>Edit Profile</h2>
-          <button onClick={onClose} style={styles.closeButton}>✕</button>
+          <button 
+            onClick={onClose} 
+            style={styles.closeButton}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
+              e.currentTarget.style.transform = 'rotate(90deg)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.transform = 'rotate(0deg)'
+            }}
+          >✕</button>
         </div>
 
         <div style={styles.content}>
@@ -163,8 +149,16 @@ function EditProfile({ isOpen, onClose, user, onSave }) {
               <div 
                 style={styles.avatarPreview} 
                 onClick={handleAvatarClick}
-                onMouseEnter={() => setAvatarHover(true)}
-                onMouseLeave={() => setAvatarHover(false)}
+                onMouseEnter={(e) => {
+                  setAvatarHover(true)
+                  e.currentTarget.style.transform = 'scale(1.05)'
+                  e.currentTarget.style.borderColor = 'rgba(29, 155, 240, 0.5)'
+                }}
+                onMouseLeave={(e) => {
+                  setAvatarHover(false)
+                  e.currentTarget.style.transform = 'scale(1)'
+                  e.currentTarget.style.borderColor = '#333'
+                }}
               >
                 {formData.avatar ? (
                   <img src={formData.avatar} alt="Preview" style={styles.previewImage} />
@@ -192,8 +186,16 @@ function EditProfile({ isOpen, onClose, user, onSave }) {
               <div 
                 style={styles.bannerPreview} 
                 onClick={handleBannerClick}
-                onMouseEnter={() => setBannerHover(true)}
-                onMouseLeave={() => setBannerHover(false)}
+                onMouseEnter={(e) => {
+                  setBannerHover(true)
+                  e.currentTarget.style.transform = 'scale(1.02)'
+                  e.currentTarget.style.borderColor = 'rgba(29, 155, 240, 0.5)'
+                }}
+                onMouseLeave={(e) => {
+                  setBannerHover(false)
+                  e.currentTarget.style.transform = 'scale(1)'
+                  e.currentTarget.style.borderColor = '#333'
+                }}
               >
                 {formData.banner ? (
                   <img src={formData.banner} alt="Banner" style={styles.bannerImage} />
@@ -308,41 +310,6 @@ function EditProfile({ isOpen, onClose, user, onSave }) {
               </div>
             </div>
 
-            <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Skills</h3>
-              <div style={styles.skillsContainer}>
-                {skillTags.map((skill, index) => (
-                  <div key={index} style={styles.skillTag}>
-                    {skill}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSkill(skill)}
-                      style={styles.skillRemove}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div style={styles.skillInputContainer}>
-                <input
-                  type="text"
-                  value={currentSkill}
-                  onChange={(e) => setCurrentSkill(e.target.value)}
-                  onKeyPress={handleSkillKeyPress}
-                  style={styles.skillInput}
-                  placeholder="Add a skill..."
-                />
-                <button
-                  type="button"
-                  onClick={handleAddSkill}
-                  style={styles.addSkillButton}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
             {error && <p style={styles.error}>{error}</p>}
 
             <div style={styles.actions}>
@@ -351,6 +318,18 @@ function EditProfile({ isOpen, onClose, user, onSave }) {
                 onClick={onClose}
                 style={styles.cancelButton}
                 disabled={loading}
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.background = 'rgba(29, 155, 240, 0.1)'
+                    e.currentTarget.style.borderColor = 'rgba(29, 155, 240, 0.5)'
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.borderColor = '#333'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                }}
               >
                 Cancel
               </button>
@@ -358,6 +337,16 @@ function EditProfile({ isOpen, onClose, user, onSave }) {
                 type="submit"
                 style={styles.saveButton}
                 disabled={loading}
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 255, 255, 0.3)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 255, 255, 0.2)'
+                }}
               >
                 {loading ? 'Saving...' : 'Save Changes'}
               </button>
@@ -376,35 +365,41 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    backdropFilter: 'blur(8px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000
+    zIndex: 1000,
+    animation: 'fadeIn 0.3s ease-out'
   },
   modal: {
     backgroundColor: '#000000',
-    borderRadius: '16px',
+    borderRadius: '20px',
     width: '90%',
     maxWidth: '600px',
     maxHeight: '90vh',
     overflow: 'hidden',
     border: '1px solid #333',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    boxShadow: '0 24px 48px rgba(0, 0, 0, 0.6)',
+    animation: 'scaleIn 0.3s ease-out'
   },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '24px 32px',
-    borderBottom: '1px solid #333'
+    borderBottom: '1px solid #333',
+    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%)'
   },
   title: {
     fontSize: '24px',
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: '#ffffff',
-    margin: 0
+    margin: 0,
+    letterSpacing: '-0.3px'
   },
   closeButton: {
     backgroundColor: 'transparent',
@@ -412,7 +407,9 @@ const styles = {
     color: '#ffffff',
     fontSize: '24px',
     cursor: 'pointer',
-    padding: '8px'
+    padding: '8px',
+    transition: 'all 0.2s ease',
+    borderRadius: '8px'
   },
   content: {
     overflowY: 'auto',
@@ -437,15 +434,17 @@ const styles = {
     margin: 0
   },
   avatarPreview: {
-    width: '100px',
-    height: '100px',
+    width: '110px',
+    height: '110px',
     borderRadius: '50%',
     overflow: 'hidden',
     backgroundColor: '#1a1a1a',
     border: '3px solid #333',
     alignSelf: 'flex-start',
     position: 'relative',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
   },
   previewImage: {
     width: '100%',
@@ -470,13 +469,15 @@ const styles = {
   },
   bannerPreview: {
     width: '100%',
-    height: '120px',
-    borderRadius: '12px',
+    height: '130px',
+    borderRadius: '16px',
     overflow: 'hidden',
     backgroundColor: '#1a1a1a',
     border: '2px solid #333',
     position: 'relative',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
   },
   bannerImage: {
     width: '100%',
@@ -526,14 +527,14 @@ const styles = {
     color: '#ffffff'
   },
   input: {
-    padding: '12px 16px',
+    padding: '14px 18px',
     backgroundColor: '#16181c',
     border: '1px solid #333',
-    borderRadius: '8px',
+    borderRadius: '12px',
     color: '#ffffff',
     fontSize: '16px',
     outline: 'none',
-    transition: 'border-color 0.2s'
+    transition: 'all 0.3s ease'
   },
   fileInput: {
     padding: '12px 16px',
@@ -553,70 +554,21 @@ const styles = {
     margin: '4px 0'
   },
   textarea: {
-    padding: '12px 16px',
+    padding: '14px 18px',
     backgroundColor: '#16181c',
     border: '1px solid #333',
-    borderRadius: '8px',
+    borderRadius: '12px',
     color: '#ffffff',
     fontSize: '16px',
     outline: 'none',
     resize: 'vertical',
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    transition: 'all 0.3s ease'
   },
   charCount: {
     fontSize: '12px',
     color: '#888',
     textAlign: 'right'
-  },
-  skillsContainer: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '8px'
-  },
-  skillTag: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '8px 12px',
-    backgroundColor: '#1d9bf0',
-    borderRadius: '20px',
-    color: '#ffffff',
-    fontSize: '14px',
-    fontWeight: '500'
-  },
-  skillRemove: {
-    backgroundColor: 'transparent',
-    border: 'none',
-    color: '#ffffff',
-    cursor: 'pointer',
-    padding: '0',
-    fontSize: '14px',
-    lineHeight: '1'
-  },
-  skillInputContainer: {
-    display: 'flex',
-    gap: '8px'
-  },
-  skillInput: {
-    flex: 1,
-    padding: '12px 16px',
-    backgroundColor: '#16181c',
-    border: '1px solid #333',
-    borderRadius: '8px',
-    color: '#ffffff',
-    fontSize: '16px',
-    outline: 'none'
-  },
-  addSkillButton: {
-    padding: '12px 16px',
-    backgroundColor: '#1d9bf0',
-    border: 'none',
-    borderRadius: '8px',
-    color: '#ffffff',
-    fontSize: '20px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    minWidth: '48px'
   },
   error: {
     color: '#f4212e',
@@ -630,25 +582,28 @@ const styles = {
   },
   cancelButton: {
     flex: 1,
-    padding: '12px',
+    padding: '14px',
     backgroundColor: 'transparent',
     border: '1px solid #333',
-    borderRadius: '20px',
+    borderRadius: '24px',
     color: '#ffffff',
     fontSize: '16px',
-    fontWeight: 'bold',
-    cursor: 'pointer'
+    fontWeight: '700',
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
   },
   saveButton: {
     flex: 1,
-    padding: '12px',
+    padding: '14px',
     backgroundColor: '#ffffff',
     border: 'none',
-    borderRadius: '20px',
+    borderRadius: '24px',
     color: '#000000',
     fontSize: '16px',
-    fontWeight: 'bold',
-    cursor: 'pointer'
+    fontWeight: '700',
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    boxShadow: '0 4px 12px rgba(255, 255, 255, 0.2)'
   }
 }
 
