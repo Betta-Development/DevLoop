@@ -46,7 +46,8 @@ router.post('/signup', async (req, res) => {
         username: user.username,
         email: user.email,
         bio: user.bio,
-        avatar: user.avatar
+        avatar: user.avatar,
+        verified: user.verified
       }
     })
   } catch (error) {
@@ -87,6 +88,7 @@ router.post('/login', async (req, res) => {
         github: user.github,
         linkedin: user.linkedin,
         skills: user.skills,
+        verified: user.verified,
         createdAt: user.createdAt
       }
     })
@@ -188,12 +190,59 @@ router.put('/profile', async (req, res) => {
         linkedin: user.linkedin,
         twitter: user.twitter,
         skills: user.skills,
+        followers: user.followers,
+        following: user.following,
         createdAt: user.createdAt
       }
     })
   } catch (error) {
     console.error('Update profile error:', error)
     res.status(500).json({ message: 'Server error updating profile' })
+  }
+})
+
+// Follow/Unfollow user
+router.post('/follow/:userId', authenticateToken, async (req, res) => {
+  try {
+    const { userId: targetUserId } = req.params
+    const decoded = jwt.verify(req.token, JWT_SECRET)
+    const currentUserId = decoded.userId
+
+    if (currentUserId === targetUserId) {
+      return res.status(400).json({ message: 'Cannot follow yourself' })
+    }
+
+    const currentUser = await User.findById(currentUserId)
+    const targetUser = await User.findById(targetUserId)
+
+    if (!currentUser || !targetUser) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    const isFollowing = currentUser.following.includes(targetUserId)
+
+    if (isFollowing) {
+      // Unfollow
+      currentUser.following = currentUser.following.filter(id => id.toString() !== targetUserId)
+      targetUser.followers = targetUser.followers.filter(id => id.toString() !== currentUserId)
+    } else {
+      // Follow
+      currentUser.following.push(targetUserId)
+      targetUser.followers.push(currentUserId)
+    }
+
+    await currentUser.save()
+    await targetUser.save()
+
+    res.json({
+      message: isFollowing ? 'Unfollowed successfully' : 'Followed successfully',
+      isFollowing: !isFollowing,
+      followersCount: targetUser.followers.length,
+      followingCount: currentUser.following.length
+    })
+  } catch (error) {
+    console.error('Follow/Unfollow error:', error)
+    res.status(500).json({ message: 'Server error' })
   }
 })
 
@@ -221,6 +270,8 @@ router.get('/user/:userId', async (req, res) => {
         linkedin: user.linkedin,
         twitter: user.twitter,
         skills: user.skills,
+        followers: user.followers,
+        following: user.following,
         createdAt: user.createdAt
       }
     })

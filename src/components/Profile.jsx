@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import EditProfile from './EditProfile'
+import './Profile.css'
 
 function Profile() {
   const navigate = useNavigate()
@@ -21,10 +22,14 @@ function Profile() {
     linkedin: '',
     twitter: '',
     website: '',
+    followers: [],
+    following: [],
+    verified: false,
     createdAt: new Date()
   })
   const [posts, setPosts] = useState([])
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isFollowing, setIsFollowing] = useState(false)
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user')
@@ -56,6 +61,11 @@ function Profile() {
       if (response.ok) {
         const data = await response.json()
         setUser(data.user)
+        // Check if current user is following this user
+        const currentUserData = JSON.parse(localStorage.getItem('user'))
+        if (currentUserData && data.user.followers) {
+          setIsFollowing(data.user.followers.some(f => f.toString() === currentUserData.id))
+        }
       }
     } catch (error) {
       console.error('Error fetching user profile:', error)
@@ -89,81 +99,108 @@ function Profile() {
     fetchUserPosts()
   }
 
+  const handleFollow = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`http://localhost:5000/api/auth/follow/${user.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setIsFollowing(data.isFollowing)
+        setUser(prev => ({
+          ...prev,
+          followersCount: data.followersCount
+        }))
+        // Update current user's following count in localStorage
+        const currentUser = JSON.parse(localStorage.getItem('user'))
+        if (currentUser) {
+          currentUser.followingCount = data.followingCount
+          localStorage.setItem('user', JSON.stringify(currentUser))
+        }
+      }
+    } catch (error) {
+      console.error('Error following/unfollowing user:', error)
+    }
+  }
+
   const handleBackClick = () => {
     navigate('/home')
   }
 
   return (
     <>
-      <div style={styles.header}>
-        <button onClick={handleBackClick} style={styles.backButton}>← Back</button>
-        <div style={styles.headerTitle}>Profile</div>
+      <div className="profile-header">
+        <button onClick={handleBackClick} className="profile-back-button">← Back</button>
+        <div className="profile-header-title">Profile</div>
       </div>
 
-      <div style={styles.profileSection}>
-        <div style={styles.coverPhoto}>
+      <div className="profile-section">
+        <div className="profile-cover-photo">
           {user.banner ? (
-            <img src={user.banner} alt="Banner" style={styles.bannerImage} />
+            <img src={user.banner} alt="Banner" className="profile-banner-image" />
           ) : null}
         </div>
-        <div style={styles.profileContent}>
-          <div style={styles.avatarSection}>
+        <div className="profile-content">
+          <div className="profile-avatar-section">
             {user.avatar ? (
-              <img src={user.avatar} alt="Profile" style={styles.avatarImage} />
+              <img src={user.avatar} alt="Profile" className="profile-avatar-image" />
             ) : (
-              <div style={styles.avatarPlaceholder}>
+              <div className="profile-avatar-placeholder">
                 {user.username.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
-          <div style={styles.profileDetails}>
-            <div style={styles.profileHeader}>
-              <h1 style={styles.username}>{user.username}</h1>
-              {isOwnProfile && (
+          <div className="profile-details">
+            <div className="profile-header-row">
+              <h1 className="profile-username">{user.username}</h1>
+              {isOwnProfile ? (
+                <button onClick={handleEditProfile} className="profile-edit-button">Edit Profile</button>
+              ) : (
                 <button 
-                  onClick={handleEditProfile} 
-                  style={styles.editButton}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(29, 155, 240, 0.1)'
-                    e.currentTarget.style.borderColor = 'rgba(29, 155, 240, 0.5)'
-                    e.currentTarget.style.transform = 'translateY(-2px)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent'
-                    e.currentTarget.style.borderColor = '#333'
-                    e.currentTarget.style.transform = 'translateY(0)'
-                  }}
-                >Edit Profile</button>
+                  onClick={handleFollow}
+                  className={isFollowing ? 'profile-unfollow-button' : 'profile-follow-button'}
+                >
+                  {isFollowing ? 'Unfollow' : 'Follow'}
+                </button>
               )}
             </div>
-            <div style={styles.userHandle}>@{user.username.toLowerCase()}</div>
-            {user.pronouns && <div style={styles.pronouns}>{user.pronouns}</div>}
-            {user.location && <div style={styles.location}>📍 {user.location}</div>}
-            {user.bio && <p style={styles.bio}>"{user.bio}"</p>}
+            <div className="profile-user-handle">@{user.username.toLowerCase()}</div>
+            {user.pronouns && <div className="profile-pronouns">{user.pronouns}</div>}
+            {user.location && <div className="profile-location">📍 {user.location}</div>}
+            {user.bio && <p className="profile-bio">"{user.bio}"</p>}
             
-            <div style={styles.metaInfo}>
-              <span style={styles.metaItem}>📅 Joined {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+            <div className="profile-follow-stats">
+              <span className="profile-follow-stat"><strong>{user.followers?.length || 0}</strong> Followers</span>
+              <span className="profile-follow-stat"><strong>{user.following?.length || 0}</strong> Following</span>
+            </div>
+            
+            <div className="profile-meta-info">
+              <span className="profile-meta-item">📅 Joined {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
             </div>
 
             {(user.website || user.github || user.linkedin || user.twitter) && (
-              <div style={styles.socialLinks}>
+              <div className="profile-social-links">
                 {user.website && (
-                  <a href={user.website} target="_blank" rel="noopener noreferrer" style={styles.socialLink}>
+                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="profile-social-link">
                     🔗 {user.website}
                   </a>
                 )}
                 {user.github && (
-                  <a href={`https://${user.github}`} target="_blank" rel="noopener noreferrer" style={styles.socialLink}>
+                  <a href={`https://${user.github}`} target="_blank" rel="noopener noreferrer" className="profile-social-link">
                     💻 {user.github}
                   </a>
                 )}
                 {user.linkedin && (
-                  <a href={`https://${user.linkedin}`} target="_blank" rel="noopener noreferrer" style={styles.socialLink}>
+                  <a href={`https://${user.linkedin}`} target="_blank" rel="noopener noreferrer" className="profile-social-link">
                     💼 {user.linkedin}
                   </a>
                 )}
                 {user.twitter && (
-                  <a href={`https://${user.twitter}`} target="_blank" rel="noopener noreferrer" style={styles.socialLink}>
+                  <a href={`https://${user.twitter}`} target="_blank" rel="noopener noreferrer" className="profile-social-link">
                     🐦 {user.twitter}
                   </a>
                 )}
@@ -171,11 +208,11 @@ function Profile() {
             )}
 
             {user.skills && user.skills.length > 0 && (
-              <div style={styles.skillsSection}>
-                <h3 style={styles.skillsTitle}>Skills</h3>
-                <div style={styles.skillsList}>
+              <div className="profile-skills-section">
+                <h3 className="profile-skills-title">Skills</h3>
+                <div className="profile-skills-list">
                   {user.skills.map((skill, index) => (
-                    <span key={index} style={styles.skillTag}>{skill}</span>
+                    <span key={index} className="profile-skill-tag">{skill}</span>
                   ))}
                 </div>
               </div>
@@ -184,98 +221,35 @@ function Profile() {
         </div>
       </div>
 
-      <div style={styles.postsSection}>
-        <h2 style={styles.postsTitle}>Posts</h2>
+      <div className="profile-posts-section">
+        <h2 className="profile-posts-title">Posts</h2>
         {posts.length === 0 ? (
-          <div style={styles.noPosts}>
-            <p style={styles.noPostsText}>No posts yet</p>
-            <p style={styles.noPostsSubtext}>When you post, they'll show up here</p>
+          <div className="profile-no-posts">
+            <p className="profile-no-posts-text">No posts yet</p>
+            <p className="profile-no-posts-subtext">When you post, they'll show up here</p>
           </div>
         ) : (
           posts.map((post) => (
-            <div 
-              key={post._id} 
-              style={styles.post}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(29, 155, 240, 0.03)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent'
-              }}
-            >
-              <div 
-                style={styles.postAvatar}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.05)'
-                  e.currentTarget.style.borderColor = 'rgba(29, 155, 240, 0.5)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)'
-                  e.currentTarget.style.borderColor = '#333'
-                }}
-              >
+            <div key={post._id} className="profile-post">
+              <div className="profile-post-avatar">
                 {post.authorAvatar ? (
-                  <img src={post.authorAvatar} alt="Profile" style={styles.avatarImage} />
+                  <img src={post.authorAvatar} alt="Profile" className="profile-post-avatar-image" />
                 ) : (
-                  <div style={styles.avatarPlaceholder}>{post.authorName.charAt(0).toUpperCase()}</div>
+                  <div className="profile-post-avatar-placeholder">{post.authorName.charAt(0).toUpperCase()}</div>
                 )}
               </div>
-              <div style={styles.postContent}>
-                <div style={styles.postHeader}>
-                  <span 
-                    style={styles.postAuthor}
-                    onMouseEnter={(e) => e.currentTarget.style.color = '#1d9bf0'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = '#ffffff'}
-                  >{post.authorName}</span>
-                  <span style={styles.postHandle}>{post.authorHandle}</span>
-                  <span style={styles.postTime}>{post.timeAgo}</span>
+              <div className="profile-post-content">
+                <div className="profile-post-header">
+                  <span className="profile-post-author">{post.authorName}</span>
+                  <span className="profile-post-handle">{post.authorHandle}</span>
+                  <span className="profile-post-time">{post.timeAgo}</span>
                 </div>
-                <p style={styles.postText}>{post.content}</p>
-                <div style={styles.postActions}>
-                  <span 
-                    style={styles.postAction}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = '#1d9bf0'
-                      e.currentTarget.style.background = 'rgba(29, 155, 240, 0.1)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = '#888'
-                      e.currentTarget.style.background = 'transparent'
-                    }}
-                  >💬 {post.comments || 0}</span>
-                  <span 
-                    style={styles.postAction}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = '#00ba7c'
-                      e.currentTarget.style.background = 'rgba(0, 186, 124, 0.1)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = '#888'
-                      e.currentTarget.style.background = 'transparent'
-                    }}
-                  >🔄 {post.retweets || 0}</span>
-                  <span 
-                    style={styles.postAction}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = '#f91880'
-                      e.currentTarget.style.background = 'rgba(249, 24, 128, 0.1)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = '#888'
-                      e.currentTarget.style.background = 'transparent'
-                    }}
-                  >❤️ {post.likes || 0}</span>
-                  <span 
-                    style={styles.postAction}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = '#1d9bf0'
-                      e.currentTarget.style.background = 'rgba(29, 155, 240, 0.1)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = '#888'
-                      e.currentTarget.style.background = 'transparent'
-                    }}
-                  >�</span>
+                <p className="profile-post-text">{post.content}</p>
+                <div className="profile-post-actions">
+                  <span className="profile-post-action profile-post-action-comment">💬 {post.comments || 0}</span>
+                  <span className="profile-post-action profile-post-action-retweet">🔄 {post.retweets || 0}</span>
+                  <span className="profile-post-action profile-post-action-like">❤️ {post.likes || 0}</span>
+                  <span className="profile-post-action profile-post-action-share">🔗</span>
                 </div>
               </div>
             </div>
@@ -293,256 +267,5 @@ function Profile() {
   )
 }
 
-const styles = {
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: '16px',
-    borderBottom: '1px solid #333',
-    position: 'sticky',
-    top: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
-    backdropFilter: 'blur(10px)',
-    zIndex: 10
-  },
-  backButton: {
-    backgroundColor: 'transparent',
-    border: 'none',
-    color: '#ffffff',
-    fontSize: '18px',
-    cursor: 'pointer',
-    padding: '8px',
-    marginRight: '16px'
-  },
-  headerTitle: {
-    fontSize: '22px',
-    fontWeight: '800',
-    color: '#ffffff',
-    letterSpacing: '-0.3px'
-  },
-  profileSection: {
-    borderBottom: '1px solid #333'
-  },
-  coverPhoto: {
-    height: '180px',
-    backgroundColor: '#1a1a1a',
-    backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    overflow: 'hidden',
-    animation: 'fadeIn 0.6s ease-out'
-  },
-  bannerImage: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover'
-  },
-  profileContent: {
-    padding: '16px'
-  },
-  avatarSection: {
-    marginTop: '-60px',
-    marginBottom: '12px'
-  },
-  avatarImage: {
-    width: '130px',
-    height: '130px',
-    borderRadius: '50%',
-    objectFit: 'cover',
-    border: '4px solid #000000',
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
-    transition: 'all 0.3s ease'
-  },
-  avatarPlaceholder: {
-    width: '130px',
-    height: '130px',
-    borderRadius: '50%',
-    backgroundColor: '#333',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '52px',
-    fontWeight: '800',
-    color: '#ffffff',
-    border: '4px solid #000000',
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
-    transition: 'all 0.3s ease'
-  },
-  profileDetails: {
-    marginTop: '8px'
-  },
-  profileHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '8px'
-  },
-  username: {
-    fontSize: '24px',
-    fontWeight: 'bold',
-    color: '#ffffff',
-    margin: 0
-  },
-  editButton: {
-    padding: '10px 20px',
-    backgroundColor: 'transparent',
-    border: '1px solid #333',
-    borderRadius: '24px',
-    color: '#ffffff',
-    fontSize: '14px',
-    fontWeight: '700',
-    cursor: 'pointer',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-  },
-  userHandle: {
-    fontSize: '16px',
-    color: '#71767b',
-    marginBottom: '8px'
-  },
-  pronouns: {
-    fontSize: '14px',
-    color: '#888',
-    marginBottom: '12px'
-  },
-  location: {
-    fontSize: '14px',
-    color: '#888',
-    marginBottom: '12px'
-  },
-  bio: {
-    fontSize: '16px',
-    color: '#ffffff',
-    lineHeight: '1.5',
-    marginBottom: '12px',
-    margin: '0 0 12px 0',
-    fontStyle: 'italic',
-    fontWeight: 'bold'
-  },
-  metaInfo: {
-    display: 'flex',
-    gap: '16px',
-    marginBottom: '12px'
-  },
-  metaItem: {
-    fontSize: '14px',
-    color: '#888'
-  },
-  socialLinks: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    marginBottom: '16px'
-  },
-  socialLink: {
-    fontSize: '14px',
-    color: '#1d9bf0',
-    textDecoration: 'none',
-    cursor: 'pointer'
-  },
-  skillsSection: {
-    marginTop: '16px',
-    marginBottom: '16px'
-  },
-  skillsTitle: {
-    fontSize: '16px',
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: '8px'
-  },
-  skillsList: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '8px'
-  },
-  skillTag: {
-    padding: '6px 12px',
-    backgroundColor: '#1a1a1a',
-    borderRadius: '16px',
-    fontSize: '14px',
-    color: '#ffffff',
-    border: '1px solid #333'
-  },
-  postsSection: {
-    padding: '16px'
-  },
-  postsTitle: {
-    fontSize: '20px',
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: '16px'
-  },
-  post: {
-    padding: '16px 0',
-    borderBottom: '1px solid #333',
-    display: 'flex',
-    gap: '12px',
-    transition: 'all 0.3s ease',
-    animation: 'fadeIn 0.4s ease-out'
-  },
-  postAvatar: {
-    width: '52px',
-    height: '52px',
-    borderRadius: '50%',
-    overflow: 'hidden',
-    backgroundColor: '#1a1a1a',
-    flexShrink: 0,
-    border: '2px solid #333',
-    transition: 'all 0.3s ease',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-  },
-  postContent: {
-    flex: 1
-  },
-  postHeader: {
-    display: 'flex',
-    gap: '8px',
-    marginBottom: '4px'
-  },
-  postAuthor: {
-    fontSize: '16px',
-    fontWeight: '700',
-    color: '#ffffff',
-    transition: 'color 0.2s ease'
-  },
-  postHandle: {
-    fontSize: '14px',
-    color: '#888'
-  },
-  postTime: {
-    fontSize: '14px',
-    color: '#888'
-  },
-  postText: {
-    fontSize: '16px',
-    color: '#ffffff',
-    lineHeight: '1.5',
-    marginBottom: '12px'
-  },
-  postActions: {
-    display: 'flex',
-    gap: '20px'
-  },
-  postAction: {
-    fontSize: '14px',
-    color: '#888',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    padding: '4px 8px',
-    borderRadius: '8px'
-  },
-  noPosts: {
-    padding: '60px 20px',
-    textAlign: 'center'
-  },
-  noPostsText: {
-    fontSize: '20px',
-    fontWeight: 'bold',
-    color: '#ffffff',
-    margin: '0 0 8px 0'
-  },
-  noPostsSubtext: {
-    fontSize: '16px',
-    color: '#888',
-    margin: 0
-  }
-}
 
 export default Profile
