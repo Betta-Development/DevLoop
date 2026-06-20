@@ -202,10 +202,16 @@ router.put('/profile', async (req, res) => {
 })
 
 // Follow/Unfollow user
-router.post('/follow/:userId', authenticateToken, async (req, res) => {
+router.post('/follow/:userId', async (req, res) => {
   try {
+    const token = req.headers.authorization?.split(' ')[1]
+    
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' })
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET)
     const { userId: targetUserId } = req.params
-    const decoded = jwt.verify(req.token, JWT_SECRET)
     const currentUserId = decoded.userId
 
     if (currentUserId === targetUserId) {
