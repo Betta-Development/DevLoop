@@ -130,7 +130,7 @@ router.post('/', async (req, res) => {
       return res.status(404).json({ message: 'User not found' })
     }
 
-    const { content } = req.body
+    const { content, originalPostId } = req.body
 
     if (!content || content.trim() === '') {
       return res.status(400).json({ message: 'Content is required' })
@@ -141,10 +141,18 @@ router.post('/', async (req, res) => {
       author: user._id,
       authorName: user.username,
       authorHandle: `@${user.username.toLowerCase()}`,
-      authorAvatar: user.avatar || ''
+      authorAvatar: user.avatar || '',
+      originalPost: originalPostId || null
     })
 
     await post.save()
+
+    // If this is a repost, add to original post's retweets
+    if (originalPostId) {
+      await Post.findByIdAndUpdate(originalPostId, {
+        $push: { retweets: user._id }
+      })
+    }
 
     res.status(201).json({
       message: 'Post created successfully',
@@ -164,6 +172,211 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Create post error:', error)
     res.status(500).json({ message: 'Server error creating post' })
+  }
+})
+
+// Like/Unlike post
+router.post('/:postId/like', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1]
+    
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' })
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET)
+    const { postId } = req.params
+    const userId = decoded.userId
+
+    const post = await Post.findById(postId)
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' })
+    }
+
+    const isLiked = post.likes.includes(userId)
+
+    if (isLiked) {
+      // Unlike
+      post.likes = post.likes.filter(id => id.toString() !== userId)
+    } else {
+      // Like
+      post.likes.push(userId)
+    }
+
+    await post.save()
+
+    res.json({
+      message: isLiked ? 'Post unliked' : 'Post liked',
+      likes: post.likes.length,
+      isLiked: !isLiked
+    })
+  } catch (error) {
+    console.error('Like post error:', error)
+    res.status(500).json({ message: 'Server error liking post' })
+  }
+})
+
+// Repost/Unrepost
+router.post('/:postId/repost', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1]
+    
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' })
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET)
+    const { postId } = req.params
+    const userId = decoded.userId
+
+    const originalPost = await Post.findById(postId)
+
+    if (!originalPost) {
+      return res.status(404).json({ message: 'Post not found' })
+    }
+
+    const user = await User.findById(userId)
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    const isReposted = originalPost.retweets.includes(userId)
+
+    if (isReposted) {
+      // Unrepost - remove from retweets and delete the repost post
+      originalPost.retweets = originalPost.retweets.filter(id => id.toString() !== userId)
+      await originalPost.save()
+      
+      // Delete the repost post
+      await Post.deleteOne({ originalPost: postId, author: userId })
+
+      res.json({
+        message: 'Post unreposted',
+        retweets: originalPost.retweets.length,
+        isReposted: false
+      })
+    } else {
+      // Repost - create new post and add to retweets
+      const repost = new Post({
+        content: '', // Empty content for repost
+        author: userId,
+        authorName: user.username,
+        authorHandle: `@${user.username.toLowerCase()}`,
+        authorAvatar: user.avatar || '',
+        originalPost: postId
+      })
+
+      await repost.save()
+
+      originalPost.retweets.push(userId)
+      await originalPost.save()
+
+      res.json({
+        message: 'Post reposted',
+        retweets: originalPost.retweets.length,
+        isReposted: true
+      })
+    }
+  } catch (error) {
+    console.error('Repost error:', error)
+    res.status(500).json({ message: 'Server error reposting' })
+  }
+})
+
+// Comment on post
+router.post('/:postId/comment', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1]
+    
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' })
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET)
+    const { postId } = req.params
+    const { content } = req.body
+    const userId = decoded.userId
+
+    const post = await Post.findById(postId)
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' })
+    }
+
+    const user = await User.findById(userId)
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    if (!content || content.trim() === '') {
+      return res.status(400).json({ message: 'Comment content is required' })
+    }
+
+    const comment = {
+      _id: new Date().getTime().toString(),
+      author: userId,
+      authorName: user.username,
+      authorHandle: `@${user.username.toLowerCase()}`,
+      authorAvatar: user.avatar || '',
+      content,
+      createdAt: new Date()
+    }
+
+    post.comments.push(comment)
+    await post.save()
+
+    res.json({
+      message: 'Comment added successfully',
+      comments: post.comments.length,
+      comment
+    })
+  } catch (error) {
+    console.error('Comment error:', error)
+    res.status(500).json({ message: 'Server error adding comment' })
+  }
+})
+
+// Get post with comments
+router.get('/:postId', async (req, res) => {
+  try {
+    const { postId } = req.params
+    const post = await Post.findById(postId)
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' })
+    }
+
+    let originalPostData = null
+    if (post.originalPost) {
+      originalPostData = await Post.findById(post.originalPost)
+    }
+
+    res.json({
+      _id: post._id,
+      content: post.content,
+      authorId: post.author,
+      authorName: post.authorName,
+      authorHandle: post.authorHandle,
+      authorAvatar: post.authorAvatar,
+      hashtags: post.hashtags,
+      likes: post.likes,
+      retweets: post.retweets,
+      comments: post.comments,
+      originalPost: originalPostData ? {
+        _id: originalPostData._id,
+        content: originalPostData.content,
+        authorName: originalPostData.authorName,
+        authorHandle: originalPostData.authorHandle,
+        authorAvatar: originalPostData.authorAvatar
+      } : null,
+      timeAgo: getTimeAgo(post.createdAt)
+    })
+  } catch (error) {
+    console.error('Get post error:', error)
+    res.status(500).json({ message: 'Server error getting post' })
   }
 })
 

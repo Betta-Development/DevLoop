@@ -378,12 +378,21 @@
 }
 
 .profile-post-action {
-  font-size: 14px;
+  font-size: 16px;
   color: #888;
   cursor: pointer;
   transition: all 0.2s ease;
-  padding: 4px 8px;
-  border-radius: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.profile-action-count {
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .profile-post-action-comment:hover {
@@ -404,6 +413,80 @@
 .profile-post-action-share:hover {
   color: #1d9bf0;
   background-color: rgba(29, 155, 240, 0.1);
+}
+
+.profile-post-liked {
+  color: #f91880 !important;
+}
+
+.profile-comment-section {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #16181c;
+  border-radius: 12px;
+  border: 1px solid #333;
+}
+
+.profile-comment-input {
+  width: 100%;
+  background-color: #000000;
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  padding: 10px;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  margin-bottom: 8px;
+}
+
+.profile-comment-input:focus {
+  border-color: #1d9bf0;
+}
+
+.profile-comment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.profile-comment-cancel-button {
+  padding: 8px 16px;
+  background-color: transparent;
+  border: 1px solid #333;
+  border-radius: 20px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-comment-cancel-button:hover {
+  background-color: rgba(29, 155, 240, 0.1);
+  border-color: rgba(29, 155, 240, 0.5);
+}
+
+.profile-comment-submit-button {
+  padding: 8px 16px;
+  background-color: #1d9bf0;
+  border: none;
+  border-radius: 20px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-comment-submit-button:hover {
+  background-color: #1a8cd8;
+}
+
+.profile-comment-submit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .profile-no-posts {

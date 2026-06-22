@@ -287,4 +287,63 @@ router.get('/user/:userId', async (req, res) => {
   }
 })
 
+// Change password
+router.put('/change-password', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1]
+    
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' })
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET)
+    const { currentPassword, newPassword } = req.body
+
+    const user = await User.findById(decoded.userId)
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    const isMatch = await user.comparePassword(currentPassword)
+
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Current password is incorrect' })
+    }
+
+    user.password = newPassword
+    await user.save()
+
+    res.json({ message: 'Password changed successfully' })
+  } catch (error) {
+    console.error('Change password error:', error)
+    res.status(500).json({ message: 'Server error changing password' })
+  }
+})
+
+// Delete account
+router.delete('/delete-account', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1]
+    
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' })
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET)
+    const userId = decoded.userId
+
+    // Delete all posts by the user
+    await Post.deleteMany({ author: userId })
+
+    // Delete the user
+    await User.findByIdAndDelete(userId)
+
+    res.json({ message: 'Account deleted successfully' })
+  } catch (error) {
+    console.error('Delete account error:', error)
+    res.status(500).json({ message: 'Server error deleting account' })
+  }
+})
+
 export default router

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
+import PostDetail from './PostDetail'
 
 function HashtagTextarea({ value, onChange, placeholder }) {
   const textareaRef = useRef(null)
@@ -74,6 +75,10 @@ function Home() {
   const [posts, setPosts] = useState([])
   const [newPost, setNewPost] = useState('')
   const [isPosting, setIsPosting] = useState(false)
+  const [likedPosts, setLikedPosts] = useState(new Set())
+  const [commentingPost, setCommentingPost] = useState(null)
+  const [commentText, setCommentText] = useState('')
+  const [selectedPostId, setSelectedPostId] = useState(null)
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user')
@@ -125,7 +130,99 @@ function Home() {
     navigate(`/profile/${userId}`)
   }
 
+  const handleLike = async (postId) => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`http://localhost:5000/api/posts/${postId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPosts(posts.map(post => 
+          post._id === postId 
+            ? { ...post, likes: data.likes }
+            : post
+        ))
+        
+        if (data.isLiked) {
+          setLikedPosts(new Set([...likedPosts, postId]))
+        } else {
+          setLikedPosts(new Set([...likedPosts].filter(id => id !== postId)))
+        }
+      }
+    } catch (error) {
+      console.error('Error liking post:', error)
+    }
+  }
+
+  const handleRepost = async (postId) => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`http://localhost:5000/api/posts/${postId}/repost`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPosts(posts.map(post => 
+          post._id === postId 
+            ? { ...post, retweets: data.retweets }
+            : post
+        ))
+        fetchPosts() // Refresh to show/hide repost
+      }
+    } catch (error) {
+      console.error('Error reposting:', error)
+    }
+  }
+
+  const handleCommentClick = (postId) => {
+    setCommentingPost(commentingPost === postId ? null : postId)
+    setCommentText('')
+  }
+
+  const handleCommentSubmit = async (postId) => {
+    if (!commentText.trim()) return
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`http://localhost:5000/api/posts/${postId}/comment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ content: commentText })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPosts(posts.map(post => 
+          post._id === postId 
+            ? { ...post, comments: data.comments }
+            : post
+        ))
+        setCommentText('')
+        setCommentingPost(null)
+      }
+    } catch (error) {
+      console.error('Error commenting:', error)
+    }
+  }
+
+  const handlePostClick = (postId) => {
+    setSelectedPostId(postId)
+  }
+
   return (
+    <>
     <div style={styles.container}>
         <div style={styles.feedHeader}>
           <h2 style={styles.feedTitle}>Home</h2>
@@ -179,6 +276,7 @@ function Home() {
             <div 
               key={post._id} 
               style={styles.post}
+              onClick={() => handlePostClick(post._id)}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'rgba(29, 155, 240, 0.03)'
               }}
@@ -219,6 +317,7 @@ function Home() {
                 <div style={styles.postActions}>
                   <span 
                     style={styles.postAction}
+                    onClick={() => handleCommentClick(post._id)}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.color = '#1d9bf0'
                       e.currentTarget.style.background = 'rgba(29, 155, 240, 0.1)'
@@ -227,9 +326,10 @@ function Home() {
                       e.currentTarget.style.color = '#888'
                       e.currentTarget.style.background = 'transparent'
                     }}
-                  >💬 {post.comments || 0}</span>
+                  >💬 <span style={styles.actionCount}>{post.comments || 0}</span></span>
                   <span 
                     style={styles.postAction}
+                    onClick={() => handleRepost(post._id)}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.color = '#00ba7c'
                       e.currentTarget.style.background = 'rgba(0, 186, 124, 0.1)'
@@ -238,18 +338,22 @@ function Home() {
                       e.currentTarget.style.color = '#888'
                       e.currentTarget.style.background = 'transparent'
                     }}
-                  >🔄 {post.retweets || 0}</span>
+                  >🔄 <span style={styles.actionCount}>{post.retweets || 0}</span></span>
                   <span 
-                    style={styles.postAction}
+                    style={{
+                      ...styles.postAction,
+                      color: likedPosts.has(post._id) ? '#f91880' : '#888'
+                    }}
+                    onClick={() => handleLike(post._id)}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.color = '#f91880'
                       e.currentTarget.style.background = 'rgba(249, 24, 128, 0.1)'
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.color = '#888'
+                      e.currentTarget.style.color = likedPosts.has(post._id) ? '#f91880' : '#888'
                       e.currentTarget.style.background = 'transparent'
                     }}
-                  >❤️ {post.likes || 0}</span>
+                  >❤️ <span style={styles.actionCount}>{post.likes || 0}</span></span>
                   <span 
                     style={styles.postAction}
                     onMouseEnter={(e) => {
@@ -260,13 +364,50 @@ function Home() {
                       e.currentTarget.style.color = '#888'
                       e.currentTarget.style.background = 'transparent'
                     }}
-                  >�</span>
+                  >🔗</span>
                 </div>
+                {commentingPost === post._id && (
+                  <div style={styles.commentSection}>
+                    <textarea
+                      style={styles.commentInput}
+                      placeholder="Write a comment..."
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      rows={2}
+                    />
+                    <div style={styles.commentActions}>
+                      <button
+                        style={styles.commentCancelButton}
+                        onClick={() => {
+                          setCommentingPost(null)
+                          setCommentText('')
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        style={!commentText.trim() ? { ...styles.commentSubmitButton, ...styles.commentSubmitButtonDisabled } : styles.commentSubmitButton}
+                        onClick={() => handleCommentSubmit(post._id)}
+                        disabled={!commentText.trim()}
+                      >
+                        Reply
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))
         )}
     </div>
+
+    <PostDetail
+      isOpen={selectedPostId !== null}
+      onClose={() => setSelectedPostId(null)}
+      postId={selectedPostId}
+      user={user}
+    />
+  </>
   )
 }
 
@@ -392,12 +533,71 @@ const styles = {
     gap: '20px'
   },
   postAction: {
-    fontSize: '14px',
+    fontSize: '16px',
     color: '#888',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-    padding: '4px 8px',
-    borderRadius: '8px'
+    padding: '6px 12px',
+    borderRadius: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontWeight: '500'
+  },
+  actionCount: {
+    fontSize: '14px',
+    fontWeight: '600'
+  },
+  commentSection: {
+    marginTop: '12px',
+    padding: '12px',
+    backgroundColor: '#16181c',
+    borderRadius: '12px',
+    border: '1px solid #333'
+  },
+  commentInput: {
+    width: '100%',
+    backgroundColor: '#000000',
+    border: '1px solid #333',
+    borderRadius: '8px',
+    color: '#ffffff',
+    fontSize: '14px',
+    padding: '10px',
+    resize: 'none',
+    outline: 'none',
+    fontFamily: 'inherit',
+    marginBottom: '8px'
+  },
+  commentActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '8px'
+  },
+  commentCancelButton: {
+    padding: '8px 16px',
+    backgroundColor: 'transparent',
+    border: '1px solid #333',
+    borderRadius: '20px',
+    color: '#ffffff',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease'
+  },
+  commentSubmitButton: {
+    padding: '8px 16px',
+    backgroundColor: '#1d9bf0',
+    border: 'none',
+    borderRadius: '20px',
+    color: '#ffffff',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease'
+  },
+  commentSubmitButtonDisabled: {
+    opacity: 0.5,
+    cursor: 'not-allowed'
   },
   avatarImage: {
     width: '100%',

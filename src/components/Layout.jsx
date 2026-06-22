@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import Settings from './Settings'
 
 function Layout({ children }) {
   const navigate = useNavigate()
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || { username: 'Developer', avatar: '' })
   const [trending, setTrending] = useState([])
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user')
@@ -36,6 +38,10 @@ function Layout({ children }) {
 
   const handleTrendingClick = (tag) => {
     navigate(`/hashtag/${tag}`)
+  }
+
+  const handleSettingsClick = () => {
+    setIsSettingsOpen(true)
   }
 
   return (
@@ -129,6 +135,23 @@ function Layout({ children }) {
             <span style={styles.navIcon}>🔖</span>
             <span style={styles.navText}>Bookmarks</span>
           </div>
+          <div 
+            style={styles.navItem}
+            onClick={handleSettingsClick}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(29, 155, 240, 0.1)'
+              e.currentTarget.style.borderColor = 'rgba(29, 155, 240, 0.3)'
+              e.currentTarget.querySelector('[style*="navIcon"]').style.transform = 'scale(1.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.borderColor = 'transparent'
+              e.currentTarget.querySelector('[style*="navIcon"]').style.transform = 'scale(1)'
+            }}
+          >
+            <span style={styles.navIcon}>⚙️</span>
+            <span style={styles.navText}>Settings</span>
+          </div>
         </nav>
         <div 
           style={styles.profileSection} 
@@ -195,6 +218,12 @@ function Layout({ children }) {
           )}
         </div>
       </div>
+
+      <Settings
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        user={user}
+      />
     </div>
   )
 }

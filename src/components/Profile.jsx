@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import EditProfile from './EditProfile'
+import PostDetail from './PostDetail'
 import './Profile.css'
 
 function Profile() {
@@ -30,6 +31,10 @@ function Profile() {
   const [posts, setPosts] = useState([])
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
+  const [likedPosts, setLikedPosts] = useState(new Set())
+  const [commentingPost, setCommentingPost] = useState(null)
+  const [commentText, setCommentText] = useState('')
+  const [selectedPostId, setSelectedPostId] = useState(null)
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user')
@@ -131,6 +136,97 @@ function Profile() {
     navigate('/home')
   }
 
+  const handleLike = async (postId) => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`http://localhost:5000/api/posts/${postId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPosts(posts.map(post => 
+          post._id === postId 
+            ? { ...post, likes: data.likes }
+            : post
+        ))
+        
+        if (data.isLiked) {
+          setLikedPosts(new Set([...likedPosts, postId]))
+        } else {
+          setLikedPosts(new Set([...likedPosts].filter(id => id !== postId)))
+        }
+      }
+    } catch (error) {
+      console.error('Error liking post:', error)
+    }
+  }
+
+  const handleRepost = async (postId) => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`http://localhost:5000/api/posts/${postId}/repost`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPosts(posts.map(post => 
+          post._id === postId 
+            ? { ...post, retweets: data.retweets }
+            : post
+        ))
+        fetchUserPosts()
+      }
+    } catch (error) {
+      console.error('Error reposting:', error)
+    }
+  }
+
+  const handleCommentClick = (postId) => {
+    setCommentingPost(commentingPost === postId ? null : postId)
+    setCommentText('')
+  }
+
+  const handleCommentSubmit = async (postId) => {
+    if (!commentText.trim()) return
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`http://localhost:5000/api/posts/${postId}/comment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ content: commentText })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPosts(posts.map(post => 
+          post._id === postId 
+            ? { ...post, comments: data.comments }
+            : post
+        ))
+        setCommentText('')
+        setCommentingPost(null)
+      }
+    } catch (error) {
+      console.error('Error commenting:', error)
+    }
+  }
+
+  const handlePostClick = (postId) => {
+    setSelectedPostId(postId)
+  }
+
   return (
     <>
       <div className="profile-header">
@@ -230,7 +326,11 @@ function Profile() {
           </div>
         ) : (
           posts.map((post) => (
-            <div key={post._id} className="profile-post">
+            <div 
+              key={post._id} 
+              className="profile-post"
+              onClick={() => handlePostClick(post._id)}
+            >
               <div className="profile-post-avatar">
                 {post.authorAvatar ? (
                   <img src={post.authorAvatar} alt="Profile" className="profile-post-avatar-image" />
@@ -246,11 +346,49 @@ function Profile() {
                 </div>
                 <p className="profile-post-text">{post.content}</p>
                 <div className="profile-post-actions">
-                  <span className="profile-post-action profile-post-action-comment">💬 {post.comments || 0}</span>
-                  <span className="profile-post-action profile-post-action-retweet">🔄 {post.retweets || 0}</span>
-                  <span className="profile-post-action profile-post-action-like">❤️ {post.likes || 0}</span>
+                  <span 
+                    className="profile-post-action profile-post-action-comment"
+                    onClick={() => handleCommentClick(post._id)}
+                  >💬 <span className="profile-action-count">{post.comments || 0}</span></span>
+                  <span 
+                    className="profile-post-action profile-post-action-retweet"
+                    onClick={() => handleRepost(post._id)}
+                  >🔄 <span className="profile-action-count">{post.retweets || 0}</span></span>
+                  <span 
+                    className={`profile-post-action profile-post-action-like ${likedPosts.has(post._id) ? 'profile-post-liked' : ''}`}
+                    onClick={() => handleLike(post._id)}
+                  >❤️ <span className="profile-action-count">{post.likes || 0}</span></span>
                   <span className="profile-post-action profile-post-action-share">🔗</span>
                 </div>
+                {commentingPost === post._id && (
+                  <div className="profile-comment-section">
+                    <textarea
+                      className="profile-comment-input"
+                      placeholder="Write a comment..."
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      rows={2}
+                    />
+                    <div className="profile-comment-actions">
+                      <button
+                        className="profile-comment-cancel-button"
+                        onClick={() => {
+                          setCommentingPost(null)
+                          setCommentText('')
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="profile-comment-submit-button"
+                        onClick={() => handleCommentSubmit(post._id)}
+                        disabled={!commentText.trim()}
+                      >
+                        Reply
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))
@@ -262,6 +400,13 @@ function Profile() {
         onClose={() => setIsEditModalOpen(false)}
         user={user}
         onSave={handleSaveProfile}
+      />
+
+      <PostDetail
+        isOpen={selectedPostId !== null}
+        onClose={() => setSelectedPostId(null)}
+        postId={selectedPostId}
+        user={currentUser}
       />
     </>
   )
